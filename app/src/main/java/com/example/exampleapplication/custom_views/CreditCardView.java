@@ -105,6 +105,7 @@ public class CreditCardView extends RelativeLayout {
         @Override
         public void onTextChanged(CharSequence s, int start, int lengthBefore, int lenghtAfter) {
             int length = start - lengthBefore + lenghtAfter;
+            Log.d(TAG, "onTextChanged: " + editText.getSelectionStart());
             if (start > length) isDeleting = true;
             else isDeleting = false;
 
@@ -132,7 +133,7 @@ public class CreditCardView extends RelativeLayout {
             String unformattedString = s.toString().replace(" ", "");
             impl.getCardNumber(unformattedString);
             if (isDeleting) return;
-            StringBuilder formattedString = new StringBuilder(getDefaultStringByCardType());
+            StringBuilder formattedString = new StringBuilder();
             switch (cardType.getCardType()) {
                 case AMEX:
                 case DINER:
