@@ -28,9 +28,16 @@ public class DataSource {
     public static List<CardInfo> getCardInfoList() {
         List<CardInfo> cardInfo = new ArrayList<>();
         CardInfo mastercard = CardInfo.build("^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)",
-                MASTER, 19);
-        CardInfo amex = CardInfo.build("^3[47][0-9]{0,13}$", AMEX, 17);
-        CardInfo diners = CardInfo.build("^3(?:0[0-5]|[68][0-9])[0-9]{0,11}$", DINER, 16);
+                MASTER, 16, "^([0-9X]{4})?([0-9X]{4})?([0-9X]{4})?([0-9X]{4})$",
+                "$1 $2 $3 $4");
+
+        CardInfo amex = CardInfo.build("^3[47][0-9]{0,13}$",
+                AMEX, 15, "^([0-9X]{4})?([0-9X]{6})?([0-9X]{5})$",
+                "$1 $2 $3");
+
+        CardInfo diners = CardInfo.build("^3(?:0[0-5]|[68][0-9])[0-9]{0,11}$",
+                DINER, 14, "^([0-9X]{4})?([0-9X]{6})?([0-9X]{4})$",
+                "$1 $2 $3");
 
         cardInfo.add(mastercard);
         cardInfo.add(amex);

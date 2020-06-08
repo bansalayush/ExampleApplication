@@ -1,9 +1,13 @@
 package com.example.exampleapplication.custom_views;
 
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.text.Editable;
 import android.text.InputFilter;
+import android.text.Spannable;
 import android.text.TextWatcher;
+import android.text.style.ReplacementSpan;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,13 +15,16 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.RelativeLayout;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatEditText;
 import androidx.appcompat.widget.AppCompatImageView;
 
 import com.example.exampleapplication.R;
+import com.example.exampleapplication.extraclasses.CreditCardFormatTextWatcher;
 import com.example.exampleapplication.interfaces.CreditCardListener;
 import com.example.exampleapplication.pojo.CardInfo;
 import com.example.exampleapplication.pojo.CardInfoEnum;
+import com.example.exampleapplication.pojo.CardText;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -89,7 +96,7 @@ public class CreditCardView extends RelativeLayout {
         });
 
 
-        editText.addTextChangedListener(textWatcher);
+        editText.addTextChangedListener(new CreditCardFormatTextWatcher(editText));
 
     }
 
@@ -104,112 +111,53 @@ public class CreditCardView extends RelativeLayout {
 
         @Override
         public void onTextChanged(CharSequence s, int start, int lengthBefore, int lenghtAfter) {
-            int length = start - lengthBefore + lenghtAfter;
+            int lenOfString = start - lengthBefore + lenghtAfter;
             Log.d(TAG, "onTextChanged: " + editText.getSelectionStart());
-            if (start > length) isDeleting = true;
+            if (start > lenOfString) isDeleting = true;
             else isDeleting = false;
 
-            if (isDeleting) return;
-            if (length >= 2) {
+            if (isDeleting) {
+                resetMaxLen();
+                return;
+            }
+            if (lenOfString >= 2) {
                 String formattedString = s.toString();
-                String unformattedString = removeSeparator(formattedString);
+                String unformattedString = removeSeparatorAndPlaceHolders(formattedString);
 
+                //detect card type
                 for (CardInfo info : cardInfoList) {
                     Matcher matcher = info.getPatternS().matcher(unformattedString);
                     if (matcher.find()) {
                         cardType = info;
                         impl.getCardType(cardType);
-                        setupInputFilterByCardType();
                         break;
-                    } else {
-                        cardType = defaultCard();
-                    }
+                    } else cardType = defaultCard();
+
                 }
             }
         }
 
         @Override
         public void afterTextChanged(Editable s) {
-            String unformattedString = s.toString().replace(" ", "");
+            String unformattedString = removeSeparatorAndPlaceHolders(s.toString());
             impl.getCardNumber(unformattedString);
             if (isDeleting) return;
-            StringBuilder formattedString = new StringBuilder();
-            switch (cardType.getCardType()) {
-                case AMEX:
-                case DINER:
-                    if (unformattedString.length() == 4) {
-                        formattedString.append(unformattedString.substring(0, 4));
-                        formattedString.append(" ");
-                    } else if (unformattedString.length() > 4 && unformattedString.length() <= 10) {
-                        formattedString.append(unformattedString.substring(0, 4));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(4, unformattedString.length()));
-                        formattedString.append(" ");
-                    } else if (unformattedString.length() > 10) {
-                        formattedString.append(unformattedString.substring(0, 4));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(4, 10));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(10, unformattedString.length()));
-                    }
-                    break;
-
-                default:
-                case MASTER:
-                case UNKNOWN:
-                    if (unformattedString.length() == 4) {
-                        formattedString.append(unformattedString.substring(0, 4));
-                        formattedString.append(" ");
-                    } else if (unformattedString.length() > 4 && unformattedString.length() <= 8) {
-                        formattedString.append(unformattedString.substring(0, 4));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(4, unformattedString.length()));
-                        formattedString.append(" ");
-                    } else if (unformattedString.length() > 8 && unformattedString.length() <= 12) {
-                        formattedString.append(unformattedString.substring(0, 4));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(4, 8));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(8, unformattedString.length()));
-                        formattedString.append(" ");
-                    } else if (unformattedString.length() > 12) {
-                        formattedString.append(unformattedString.substring(0, 4));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(4, 8));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(8, 12));
-                        formattedString.append(" ");
-                        formattedString.append(unformattedString.substring(12, unformattedString.length()));
-                    }
-                    break;
-            }
+            CardText cardText = CardText.getFormattedCardTet(cardType, unformattedString);
+            StringBuilder formattedString = new StringBuilder(cardText.getFormattedString());
 
             if (formattedString.length() > 0) {
                 editText.removeTextChangedListener(this);
                 editText.setText(formattedString.toString());
-                editText.setSelection(formattedString.toString().length());
+                editText.setSelection(cardText.getLastDigitPointer());
                 editText.addTextChangedListener(this);
             }
 
-            if (formattedString.length() == cardType.getMaxLength())
+            if (cardText.getNumberString().length() == cardType.getMaxLength()) {
                 impl.isValid(isCardValid(unformattedString));
+                setupInputFilterByCardType();
+            }
         }
     };
-
-    private String getDefaultStringByCardType() {
-        switch (cardType.getCardType()) {
-            case AMEX:
-                return "XXXXXXXXXXXXXXX";
-
-            case DINER:
-                return "XXXXXXXXXXXXXX";
-
-            default:
-            case MASTER:
-            case UNKNOWN:
-                return "XXXXXXXXXXXXXXXX";
-        }
-    }
 
     private boolean isCardValid(String unformattedString) {
         int lastDigit = Character.digit(unformattedString.charAt(unformattedString.length() - 1), 10);
@@ -233,8 +181,10 @@ public class CreditCardView extends RelativeLayout {
         return (sum + lastDigit) % 10 == 0;
     }
 
-    private String removeSeparator(String formattedString) {
-        return formattedString.replace(" ", "");
+    private String removeSeparatorAndPlaceHolders(String formattedString) {
+        return formattedString
+                .replace(" ", "")
+                .replace("X", "");
     }
 
     private void setupInputFilterByCardType() {
@@ -245,6 +195,58 @@ public class CreditCardView extends RelativeLayout {
         InputFilter[] filterArray = new InputFilter[1];
         filterArray[0] = new InputFilter.LengthFilter(maxLen);
         editText.setFilters(filterArray);
+
+    }
+
+    private void resetMaxLen() {
+        InputFilter[] filterArray = new InputFilter[1];
+        filterArray[0] = new InputFilter.LengthFilter(100);
+        editText.setFilters(filterArray);
+    }
+
+    public static void formatCardNumber(@NonNull Editable ccNumber, int paddingPx, int maxLength) {
+        int textLength = ccNumber.length();
+        // first remove any previous span
+        CreditCardFormatTextWatcher.PaddingRightSpan[] spans = ccNumber.getSpans(0, ccNumber.length(), CreditCardFormatTextWatcher.PaddingRightSpan.class);
+        for (int i = 0; i < spans.length; i++) {
+            ccNumber.removeSpan(spans[i]);
+        }
+        // then truncate to max length
+        if (maxLength > 0 && textLength > maxLength - 1) {
+            ccNumber.replace(maxLength, textLength, "");
+        }
+        // finally add margin spans
+        for (int i = 1; i <= ((textLength - 1) / 4); i++) {
+            int end = i * 4;
+            int start = end - 1;
+            CreditCardFormatTextWatcher.PaddingRightSpan marginSPan = new CreditCardFormatTextWatcher.PaddingRightSpan(paddingPx);
+            ccNumber.setSpan(marginSPan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+    }
+
+    public static class PaddingRightSpan extends ReplacementSpan {
+
+        private int mPadding;
+
+        public PaddingRightSpan(int padding) {
+            mPadding = padding;
+        }
+
+        @Override
+        public int getSize(@NonNull Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fm) {
+            float[] widths = new float[end - start];
+            paint.getTextWidths(text, start, end, widths);
+            int sum = mPadding;
+            for (int i = 0; i < widths.length; i++) {
+                sum += widths[i];
+            }
+            return sum;
+        }
+
+        @Override
+        public void draw(@NonNull Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, @NonNull Paint paint) {
+            canvas.drawText(text, start, end, x, y, paint);
+        }
 
     }
 }
