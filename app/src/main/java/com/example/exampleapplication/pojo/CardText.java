@@ -50,16 +50,28 @@ public class CardText {
         this.numberString = numberString;
     }
 
-    public static CardText getFormattedCardTet(CardInfo cardType, String unformattedString) {
-        StringBuilder textWithoutPlaceholder = new StringBuilder(unformattedString.replace("X", ""));
-        String stringWithoutPlaceholder = textWithoutPlaceholder.toString();
-        int lastDigitPointer = textWithoutPlaceholder.length();
-        int diff = cardType.getMaxLength() - textWithoutPlaceholder.length();
+    public static CardText getFormattedCardTet(CardInfo cardType, String s) {
+        StringBuilder textWithoutPlaceholder = new StringBuilder(s.replace("X", ""));
+        int lastDigitPointer = textWithoutPlaceholder.length();//with spaces to maintain correct entering order
+
+        //removing spaces
+        StringBuilder stringWithoutPlaceholderAndSpaces = new StringBuilder(textWithoutPlaceholder
+                .toString().replace(" ", ""));
+
+        //don't edit this string
+        String numberString = stringWithoutPlaceholderAndSpaces.toString();
+
+        //adding placeholders
+        int diff = cardType.getMaxLength() - stringWithoutPlaceholderAndSpaces.length();
         for (int i = 0; i < diff; i++)
-            textWithoutPlaceholder.append("X");
-        String formattedString = textWithoutPlaceholder.toString()
+            stringWithoutPlaceholderAndSpaces.append("X");
+
+        //formatting string on the basis of regex
+        String formattedString = stringWithoutPlaceholderAndSpaces.toString()
                 .replaceFirst(cardType.getFormattingPattern(), cardType.getPlacementPattern());
-        return new CardText(lastDigitPointer, cardType.getCardType(), formattedString, stringWithoutPlaceholder);
+
+        return new CardText(lastDigitPointer, cardType.getCardType(),
+                formattedString, numberString);
 
     }
 }

@@ -1,26 +1,34 @@
 package com.example.exampleapplication;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.Html;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.AppCompatTextView;
-import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.motion.widget.MotionLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.ActivityOptionsCompat;
-import androidx.core.text.HtmlCompat;
+import androidx.core.app.NotificationCompat;
 import androidx.core.util.Pair;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.fragment.app.ListFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -30,17 +38,26 @@ import com.example.exampleapplication.custom_views.CreditCardView;
 import com.example.exampleapplication.custom_views.PolygonShapeView;
 import com.example.exampleapplication.custom_views.RectangularLoader;
 import com.example.exampleapplication.custom_views.SolarSystemView;
+import com.example.exampleapplication.fragment.DetailsFragment;
+import com.example.exampleapplication.fragment.ListingFragment;
+import com.example.exampleapplication.fragment.SimpleFragment;
 import com.example.exampleapplication.interfaces.CreditCardListener;
+import com.example.exampleapplication.interfaces.OnFragmentInteractionListener;
 import com.example.exampleapplication.pojo.CardInfo;
+import com.scorpio.player_lib.PlayerActivity;
 
 import java.io.File;
 
 
+import static android.app.Notification.DEFAULT_ALL;
 import static android.view.View.GONE;
-import static androidx.core.text.HtmlCompat.FROM_HTML_MODE_COMPACT;
+import static androidx.fragment.app.FragmentTransaction.TRANSIT_FRAGMENT_FADE;
+import static androidx.fragment.app.FragmentTransaction.TRANSIT_FRAGMENT_OPEN;
 import static com.example.exampleapplication.constants.Statics.MOTION_LAYOUT_VIEWPAGER_NUMBER_OF_ITEMS;
+import static com.example.exampleapplication.fragment.SimpleFragment.NONE;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity
+        implements View.OnClickListener, OnFragmentInteractionListener {
     private static final String TAG = "MainActivity";
 
     MotionLayout onboardingRoot;
@@ -55,8 +72,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     RecyclerView pageSnapperRecyclerView;
 
     AppCompatTextView scrollbaleText;
+    private Button button;
+    private boolean isDisplayed = false;
 
     float progress;
+
+    private int radioChoice = NONE;
+
+    interface MNotifiaction {
+        String CHANNEL_ID_ONE = "channel_id_one";
+        String NOTIFICATION_CHANNEL_NAME_ONE = "MAIN_NOTIFICATION_ONE";
+        int NOTIFICATION_ID = 0;
+
+        String CHANNEL_ID_TWO = "channel_id_two";
+        String NOTIFICATION_CHANNEL_NAME_TWO = "MAIN_NOTIFICATION_TWO";
+    }
+
+    private NotificationManager mNotifyManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +104,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        collapsingToolbarLayoutExample();
 //       motionLayoutExample();
 
-        creditCardViewExample();
+//        creditCardViewExample();
+//        overrideEditTextonDrawExample();
+//        codelabsFragmentExample();
+//        masterDetailLayoutExample();
+//        notificationChannelExample();
+        getLifecycle().addObserver(new MainActivityLifeCycleObserver());
+        SharedPreferences sharedPreferences = getSharedPreferences("MY_PREFS", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit(); //editor is to allow editing
+        editor.apply();//asynchronous
 
 
+
+    }
+
+    private void overrideEditTextonDrawExample() {
+        setContentView(R.layout.layout_override_edit_ondraw);
     }
 
     public void scrollableTextExample() {
@@ -109,7 +155,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             System.out.println("mp4Files" + f.getAbsolutePath());
         }
     }
-
 
     public void solarSystemViewExample() {
         setContentView(R.layout.rounder_loader_view_example_layout);
@@ -227,5 +272,173 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.d(TAG, "isValid: " + isValid);
             }
         });
+    }
+
+    private void codelabsFragmentExample() {
+        setContentView(R.layout.codelabs_fragment_example);
+        button = findViewById(R.id.open_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isDisplayed) {
+                    hideFragment();
+                } else {
+                    displayFragment();
+                }
+            }
+        });
+    }
+
+    private void masterDetailLayoutExample() {
+        setContentView(R.layout.list_details_layout);
+        boolean isTwoPane = findViewById(R.id.details_container) != null;
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
+            Log.d(TAG, "masterDetailLayoutExample: " + getSupportFragmentManager().getBackStackEntryCount());
+        });
+
+
+        //region load list fragment
+        FrameLayout listLayout = findViewById(R.id.list_container);
+        ListingFragment listFragment = ListingFragment.newInstance();
+        fragmentTransaction
+                .setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_left, R.anim.slide_in_right, R.anim.slide_out_left)
+                .add(R.id.list_container, listFragment);
+        //endregion
+
+        //region load details fragment (Wider Screens)
+        if (isTwoPane) {
+            FrameLayout detailsLayout = findViewById(R.id.details_container);
+            DetailsFragment detailsFragment = DetailsFragment.newInstance();
+            fragmentTransaction
+                    .add(R.id.details_container, detailsFragment);
+        }
+        //endregion
+        fragmentTransaction.commit();
+
+    }
+
+    @Override
+    public void onClickMe() {
+        boolean isTwoPane = findViewById(R.id.details_container) != null;
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        //region load details fragment (Both Cases)
+        if (isTwoPane) {
+//            FrameLayout detailsLayout = findViewById(R.id.details_container);
+//            DetailsFragment detailsFragment = DetailsFragment.newInstance();
+//            fragmentTransaction
+//                    .add(R.id.details_container, detailsFragment)
+//                    .commit();
+        } else {
+            FrameLayout detailsLayout = findViewById(R.id.list_container);
+            DetailsFragment detailsFragment = DetailsFragment.newInstance();
+            fragmentTransaction
+                    .setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, 0, R.anim.slide_out_right)
+                    .addToBackStack(null)
+                    .setTransition(TRANSIT_FRAGMENT_OPEN)
+                    .add(R.id.list_container, detailsFragment)
+                    .commit();
+        }
+        //endregion
+    }
+
+    public void displayFragment() {
+        SimpleFragment simpleFragment = SimpleFragment.newInstance(radioChoice);
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction
+                .add(R.id.fragment, simpleFragment)
+                .addToBackStack(null)
+                .commit();
+
+        button.setText("Close");
+        isDisplayed = true;
+
+        Log.d(TAG, "displayFragment: after adding" +
+                fragmentManager.getBackStackEntryCount());
+
+    }
+
+    public void hideFragment() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        SimpleFragment fragment = (SimpleFragment) fragmentManager
+                .findFragmentById(R.id.fragment);
+
+        if (fragment != null) {
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.remove(fragment)
+                    .commit();
+        } else {
+
+        }
+        isDisplayed = false;
+        button.setText("Open");
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Log.d(TAG, "displayFragment: after adding" +
+                getSupportFragmentManager().getBackStackEntryCount());
+    }
+
+    @Override
+    public void onRadioButtonChoice(int choice) {
+        radioChoice = choice;
+    }
+
+    public void notificationChannelExample() {
+        setContentView(R.layout.notification_example);
+        AppCompatButton notifyMe = findViewById(R.id.bt_notifyMe);
+        notifyMe.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendNotification();
+            }
+        });
+        createNotificationChannel(MNotifiaction.CHANNEL_ID_ONE);
+        createNotificationChannel(MNotifiaction.CHANNEL_ID_TWO);
+
+    }
+
+    private void sendNotification() {
+        NotificationCompat.Builder notifyBuilder = getNotificationBuilder(MNotifiaction.CHANNEL_ID_TWO);
+        mNotifyManager.notify(MNotifiaction.NOTIFICATION_ID, notifyBuilder.build());
+    }
+
+    private void createNotificationChannel(String channelId) {
+        mNotifyManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >=
+                android.os.Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel = new NotificationChannel(channelId, MNotifiaction.NOTIFICATION_CHANNEL_NAME_TWO
+                    , NotificationManager.IMPORTANCE_HIGH);
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.GREEN);
+            notificationChannel.enableVibration(true);
+            notificationChannel.setDescription("Notification from Mascot");
+            mNotifyManager.createNotificationChannel(notificationChannel);
+        }
+    }
+
+    private NotificationCompat.Builder getNotificationBuilder(String channelId) {
+        //for devices running Android 7.1 or lower
+        //setDefault Priority and default VIBRATION,LIGHT
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent notificationPendingIntent = PendingIntent.getActivity(this,
+                MNotifiaction.NOTIFICATION_ID, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        NotificationCompat.Builder notifyBuilder = new NotificationCompat.Builder(this, channelId)
+                .setContentIntent(notificationPendingIntent)
+                .setAutoCancel(false)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setDefaults(DEFAULT_ALL)
+                .setContentTitle("You've been notified!")
+                .setContentText("This is your notification text.")
+                .setSmallIcon(R.drawable.ic_tick);
+        return notifyBuilder;
+
     }
 }

@@ -96,7 +96,7 @@ public class CreditCardView extends RelativeLayout {
         });
 
 
-        editText.addTextChangedListener(new CreditCardFormatTextWatcher(editText));
+        editText.addTextChangedListener(textWatcher);
 
     }
 
@@ -142,7 +142,7 @@ public class CreditCardView extends RelativeLayout {
             String unformattedString = removeSeparatorAndPlaceHolders(s.toString());
             impl.getCardNumber(unformattedString);
             if (isDeleting) return;
-            CardText cardText = CardText.getFormattedCardTet(cardType, unformattedString);
+            CardText cardText = CardText.getFormattedCardTet(cardType, s.toString());
             StringBuilder formattedString = new StringBuilder(cardText.getFormattedString());
 
             if (formattedString.length() > 0) {
@@ -207,7 +207,7 @@ public class CreditCardView extends RelativeLayout {
     public static void formatCardNumber(@NonNull Editable ccNumber, int paddingPx, int maxLength) {
         int textLength = ccNumber.length();
         // first remove any previous span
-        CreditCardFormatTextWatcher.PaddingRightSpan[] spans = ccNumber.getSpans(0, ccNumber.length(), CreditCardFormatTextWatcher.PaddingRightSpan.class);
+        PaddingRightSpan[] spans = ccNumber.getSpans(0, ccNumber.length(), PaddingRightSpan.class);
         for (int i = 0; i < spans.length; i++) {
             ccNumber.removeSpan(spans[i]);
         }
@@ -219,7 +219,7 @@ public class CreditCardView extends RelativeLayout {
         for (int i = 1; i <= ((textLength - 1) / 4); i++) {
             int end = i * 4;
             int start = end - 1;
-            CreditCardFormatTextWatcher.PaddingRightSpan marginSPan = new CreditCardFormatTextWatcher.PaddingRightSpan(paddingPx);
+            PaddingRightSpan marginSPan = new PaddingRightSpan(paddingPx);
             ccNumber.setSpan(marginSPan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
     }
