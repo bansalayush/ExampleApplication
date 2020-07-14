@@ -5,10 +5,14 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.text.Html;
 import android.util.Log;
 import android.view.View;
@@ -44,6 +48,7 @@ import com.example.exampleapplication.fragment.SimpleFragment;
 import com.example.exampleapplication.interfaces.CreditCardListener;
 import com.example.exampleapplication.interfaces.OnFragmentInteractionListener;
 import com.example.exampleapplication.pojo.CardInfo;
+import com.example.exampleapplication.receivers.MyReceiver;
 import com.scorpio.player_lib.PlayerActivity;
 
 import java.io.File;
@@ -79,6 +84,8 @@ public class MainActivity extends AppCompatActivity
 
     private int radioChoice = NONE;
 
+    MyReceiver myReceiver;
+
     interface MNotifiaction {
         String CHANNEL_ID_ONE = "channel_id_one";
         String NOTIFICATION_CHANNEL_NAME_ONE = "MAIN_NOTIFICATION_ONE";
@@ -109,13 +116,35 @@ public class MainActivity extends AppCompatActivity
 //        codelabsFragmentExample();
 //        masterDetailLayoutExample();
 //        notificationChannelExample();
-        getLifecycle().addObserver(new MainActivityLifeCycleObserver());
-        SharedPreferences sharedPreferences = getSharedPreferences("MY_PREFS", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit(); //editor is to allow editing
-        editor.apply();//asynchronous
+//        getLifecycle().addObserver(new MainActivityLifeCycleObserver());
+//
+//        myReceiver = new MyReceiver();
+//        IntentFilter filter = new IntentFilter();
+//        filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+//        filter.addAction(Intent.ACTION_POWER_CONNECTED);
+//        filter.addAction(Intent.ACTION_HEADSET_PLUG);
+//        filter.addAction(Intent.ACTION_HEADSET_PLUG);
+//        this.registerReceiver(myReceiver, filter);
+
+        threadExample();
 
 
+    }
 
+    private void threadExample() {
+        setContentView(R.layout.thread_example_layout);
+//        NewThread t = new NewThread();
+//        try {
+//            t.t.join();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+
+        Log.d(TAG, "onCreate: " + Thread.currentThread());
+        HandlerThread
+        new Handler().post(() -> {
+            Log.d(TAG, "onCreate: Runnable" + Thread.currentThread());
+        });
     }
 
     private void overrideEditTextonDrawExample() {
@@ -440,5 +469,35 @@ public class MainActivity extends AppCompatActivity
                 .setSmallIcon(R.drawable.ic_tick);
         return notifyBuilder;
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        this.unregisterReceiver(myReceiver);
+        super.onDestroy();
+    }
+
+    public class NewThread implements Runnable {
+        Thread t;
+
+        NewThread() {
+            // Create a new, second thread
+            t = new Thread(this, "Demo Thread");
+            System.out.println("Child thread: " + t);
+            t.start(); // Start the thread
+        }
+
+        // This is the entry point for the second thread.
+        public void run() {
+            try {
+                for (int i = 10; i > 0; i--) {
+                    System.out.println("Child Thread: " + i);
+                    Thread.sleep(1500);
+                }
+            } catch (InterruptedException e) {
+                System.out.println("Child interrupted.");
+            }
+            System.out.println("Exiting child thread.");
+        }
     }
 }

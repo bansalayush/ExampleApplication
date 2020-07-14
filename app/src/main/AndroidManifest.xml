@@ -12,6 +12,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <activity
             android:name=".SearchActivity"
             android:theme="@style/Theme.AppCompat.Transparent" />
@@ -23,7 +24,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivityForRx" />
-
     </application>
 
 </manifest>
