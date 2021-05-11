@@ -22,6 +22,11 @@ public class DataSource {
         tasks.add(new Task("Make my bed", true, 1));
         tasks.add(new Task("Unload the dishwasher", false, 0));
         tasks.add(new Task("Make dinner", true, 5));
+        tasks.add(new Task("Make Lunch", true, 6));
+        tasks.add(new Task("Throw out garbage ", true, 7));
+        tasks.add(new Task("Charge your phone", true, 8));
+        tasks.add(new Task("Make your own breakfast", true, 9));
+        tasks.add(new Task("Get the tea ready", true, 10));
         return tasks;
     }
 

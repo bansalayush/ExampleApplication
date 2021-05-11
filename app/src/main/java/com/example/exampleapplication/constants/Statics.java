@@ -16,4 +16,9 @@ public class Statics {
     public static final String AMEX = "AMEX";
     public static final String UNKNOWN = "UNKNOWN";
 
+    public static final int SCROLL_UP = -1;
+    public static final int SCROLL_DOWN = 1;
+
+
+
 }

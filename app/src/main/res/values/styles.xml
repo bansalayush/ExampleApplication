@@ -21,4 +21,10 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
+    <!-- android 11 keyboard animtion theme -->
+    <style name="KeyboardAnimationTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Rest of the theme attributes... -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
 </resources>

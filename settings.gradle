@@ -1,2 +1,3 @@
+include ':zoomabledraweeview'
 include ':player-lib'
 include ':app'
